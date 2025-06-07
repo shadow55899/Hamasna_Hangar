@@ -1,0 +1,229 @@
+Bahaa Borhom, [6/7/2025 1:03 PM]
+حل المسألة الأولى: نظام إدارة سلسلة التوريد باستخدام هياكل بيانات متقدمة
+1. إدارة سجلات المنتجات (Product Catalog)
+سنستخدم شجرة ثنائية ذاتيّة التوازن (AVL Tree) لتخزين المنتجات حسب معرّفها (productID).
+- كل عقدة تمثل:
+- id (int)
+- name (String)
+- price (double)
+- quantity (int)
+- مؤشّران left وright
+- height (للتوازن)
+1.1. عمليات أساسية
+class ProductNode {
+    int id, quantity, height;
+    double price;
+    String name;
+    ProductNode left, right;
+    static final int MAX_CAPACITY = 1000;
+
+    ProductNode(int id, String name, double price, int quantity) {
+        if (price < 0 || quantity < 0 || quantity > MAX_CAPACITY)
+            throw new IllegalArgumentException("Price/Quantity constraints violated");
+        this.id = id; this.name = name;
+        this.price = price; this.quantity = quantity;
+        this.height = 1;
+    }
+}
+
+// ارتفاع العقدة أو صفر لو كانت null
+int height(ProductNode n) { return n == null ? 0 : n.height; }
+
+// تحديث ارتفاع n
+void updateHeight(ProductNode n) {
+    n.height = 1 + max(height(n.left), height(n.right));
+}
+
+// عامل التوازن: |height(left) - height(right)|
+int getBalance(ProductNode n) {
+    return n == null ? 0 : height(n.left) - height(n.right);
+}
+
+// تدوير إلى اليمين
+ProductNode rightRotate(ProductNode y) { … }
+
+// تدوير إلى اليسار
+ProductNode leftRotate(ProductNode x) { … }
+
+- إضافة (insert)
+- إدراج عقدة مثل شجرة بحث ثنائية عادية.
+- تحديث الارتفاع والتوازن من أسفل لأعلى.
+- إجراء تدويرات (LL, RR, LR, RL) للحفاظ على balance ≤ 1.
+- البحث (search)
+- مقارنة key مع id والعثور على العقدة أو null.
+- التحديث (updatePrice/updateQuantity)
+- إيجاد العقدة.
+- ضبط السعر أو الكمية مع التحقق من القيود.
+- الحذف (delete)
+- حذف كالمعتاد في BST.
+- إعادة توازن الشجرة بأخذ الارتفاع والتوازن.
+بفضل شجرة AVL، عمليات إدراج/حذف/بحث تظل في زمن O(log n) حتى عند إدخال معرفات متتالية.
+
+
+2. تخزين سجلات الشحنات (Shipments)
+يمكننا إعادة استخدام شجرة AVL أخرى أو خريطة (HashMap<Integer, Shipment>) إذا أردنا بحثاً وتحديثاً في زمن متوسط O(1).
+- Shipment: (shipmentID, destination, cost, deliveryDate)
+- إضافة، بحث، تحديث تاريخ التسليم
+- التحقق من cost >= 0 ومن أنّ deliveryDate ليست في الماضي.
+
+3. إدارة أولويات التسليم (Orders Priority Queue)
+نستخدم هيكل بيانات Max-Heap أو PriorityQueue (بترتيب تنازلي حسب درجة الأولوية):
+- طلب يحتوي: (orderID, priorityLevel, cost, orderDate)
+- دعم:
+- enqueue (إضافة)
+- dequeue (سحب الطلب ذي الأولوية الأعلى)
+- updatePriority(orderID, newPriority) (يمكن تنفيذها بإعادة إدراج الطلب)
+
+4. التقارير التحليلية والديناميكية
+- قيمة المخزون:
+ـ معدل الزحف (in-order traversal) لشجرة المنتجات، وجمع price * quantity.
+- الشحنات عالية التكلفة:
+ـ تمرير عبر شجرة الشحنات أو خريطة وتصفيتها حسب cost > threshold.
+- إجمالي تكلفة الطلبات:
+ـ في الـ Max-Heap أو قائمة الطلبات، جمع cost.
+- التحديث الديناميكي:
+ـ أي تغيير في السعر/الكمية/التاريخ/الأولوية ينعكس فوراً في العمليات أعلاه إذا أُعيد احتساب التقارير أو حدث traversal جديد.
+
+5. حالات خاصة وسياسات التحقق
+- الأسعار غير السالبة: price >= 0
+- السعة القصوى للمستودع: quantity ≤ MAX_CAPACITY
+- ممنوع تواريخ في الماضي: قارن deliveryDate ≥ today
+- حدود الأسبقية: محددات مسبقة (مثلاً: priority من 1 إلى 5)
+
+Bahaa Borhom, [6/7/2025 1:03 PM]
+حل المسألة الثانية: تدفق المياه للمحيطين
+
+نريد تحديد جميع الخلايا التي يستطيع الماء منها الوصول إلى المحيط الهادئ (الحواف العليا واليسرى) والأطلسي (الحواف السفلى واليمنى).
+1. الفكرة العامة (عكس التدفق)
+- نبدأ من الحواف بدل النقاط الداخلية.
+- نستخدم DFS أو BFS مرتين:
+- من كل خلية على حافة المحيط الهادئ ننتشر داخلياً نحو الخلايا التي height ≥ current.
+- من حافة الأطلسي بنفس الطريقة.
+- الخلايا التي وسمناها قابلتين للوصول في كلي المرّتين تشكل النتيجة.
+2. التعامل مع طلبات إضافية
+- الأنهار (Rivers):
+- نعرّف مصفوفة isRiver[i][j] = True
+- في DFS نسمح بالانتشار دائمًا بين خليتين نهريتين متجاورتين حتى لو heights مختلف:
+if isRiver[i][j] and isRiver[ni][nj]:
+    dfs(ni,nj, visited)
+elif heights[ni][nj] >= heights[i][j]:
+    dfs(ni,nj, visited)
+- المناطق الصحراوية (Desert Evaporation):
+- isDesert[i][j] = True
+- بعد وسم الخلية الصحراوية كقابلة للوصول، لا نستمر في انتشار DFS منها:
+if isDesert[i][j]: return
+- هكذا نمنع امتداد التدفق عبرها.
+
+خطوات مقترحة للتطبيق
+- صمّم واجهة برمجة (API) تضمّ الوظائف الأربع في المسألة الأولى:
+- addProduct(...), searchProduct(...), … إلخ.
+- استعمل Class SupplyChainManager يحتوى مكوّنات (شجرة منتجات، شجرة شحنات، PriorityQueue للطلبات).
+- لاختبار المسألة الثانية، أنشئ وحدة مستقلة WaterFlowSolver بها دوال pacificAtlantic وملحقاتها.
+- جهّز بيانات اختبارية، واستخدم وحدات الـ unit tests لتغطية جميع السيناريوهات:
+- عمليات CRUD على المنتجات والشحنات، تحديث الأولويات.
+- نتائج تدفق المياه مع وجود أنهار وصحاري.
+
+Bahaa Borhom, [6/7/2025 1:03 PM]
+import java.util.ArrayList;
+import java.util.List;
+
+public class PacificAtlantic {
+
+    private int m; // عدد الصفوف
+    private int n; // عدد الأعمدة
+    private int[][] heights; // مصفوفة الارتفاعات
+    // اتجاهات التحرك: للأسفل، لأعلى، لليمين، لليسار
+    private final int[][] directions = { {1, 0}, {-1, 0}, {0, 1}, {0, -1} };
+
+    /**
+     * الدالة الأساسية التي تعبئ الخلايا التي يمكن أن تتدفق منها الأمطار
+     * نحو كلا المحيطين (المحيط الهادئ والأطلسي).
+     * @param heights مصفوفة الارتفاعات للمستطيل
+     * @return قائمة من الإحداثيات لكل خلية تحقق الشرط
+     */
+    public List<int[]> pacificAtlantic(int[][] heights) {
+        List<int[]> result = new ArrayList<>();
+        if (heights == null || heights.length == 0) {
+            return result;
+        }
+        
+        this.heights = heights;
+        m = heights.length;
+        n = heights[0].length;
+        
+        // مصفوفات لتسجيل الخلايا التي يصل إليها التدفق
+        boolean[][] pacific = new boolean[m][n];
+        boolean[][] atlantic = new boolean[m][n];
+        
+        // تبدأ عملية البحث (DFS) من خلية على حافة المحيط الهادئ:
+        // الحافة اليسرى (كل صف) والحافة العليا (كل عمود)
+        for (int i = 0; i < m; i++) {
+            dfs(i, 0, pacific);
+        }
+        for (int j = 0; j < n; j++) {
+            dfs(0, j, pacific);
+        }
+        
+        // تبدأ عملية البحث (DFS) من خلية على حافة المحيط الأطلسي:
+        // الحافة اليمنى (كل صف) والحافة السفلى (كل عمود)
+        for (int i = 0; i < m; i++) {
+            dfs(i, n - 1, atlantic);
+        }
+        for (int j = 0; j < n; j++) {
+            dfs(m - 1, j, atlantic);
+        }
+        
+        // جمع الخلايا المشتركة التي يمكن أن تصل إلى كلا المحيطين
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (pacific[i][j] && atlantic[i][j]) {
+                    result.add(new int[] { i, j });
+                }
+            }
+        }
+        
+        return result;
+    }
+
+    /**
+     * دالة البحث العميق (DFS) التي تسمح بالتدفق من الخلية الحالية إلى الخلايا المجاورة
+     * إذا كان ارتفاع الخلية المجاورة أكبر أو يساوي ارتفاع الخلية الحالية.
+     * @param i رقم الصف
+     * @param j رقم العمود
+     * @param visited مصفوفة لتعقب الخلايا التي تمت زيارتها في هذا التدفق
+     */
+    private void dfs(int i, int j, boolean[][] visited) {
+        visited[i][j] = true;
+        // التجوال بكافة الاتجاهات
+        for (int[] d : directions) {
+            int ni = i + d[0];
+            int nj = j + d[1];
+            // التحقق من صحة الإحداثيات وعدم الزيارة مسبقًا، وكذلك تحقق شرط الارتفاع
+            if (ni >= 0 && ni < m && nj >= 0 && nj < n
+                    && !visited[ni][nj]
+                    && heights[ni][nj] >= heights[i][j]) {
+                dfs(ni, nj, visited);
+            }
+        }
+    }
+    
+    // دالة main لاختبار التنفيذ
+    public static void main(String[] args) {
+        PacificAtlantic solver = new PacificAtlantic();
+        int[][] heights = {
+            {1, 2, 2, 3, 5},
+            {3, 2, 3, 4, 4},
+            {2, 4, 5, 3, 1},
+            {6, 7, 1, 4, 5},
+            {5, 1, 1, 2, 4}
+        };
+
+        List<int[]> result = solver.pacificAtlantic(heights);
+        
+        // إخراج الإحداثيات بالشكل المطلوب
+        for (int[] cell : result) {
+            System.out.print("[" + cell[0] + "," + cell[1] + "] ");
+        }
+        System.out.println();
+    }
+}
