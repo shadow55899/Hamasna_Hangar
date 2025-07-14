@@ -1,22 +1,25 @@
 class ProductNode {
-    static int product_num = 0;  // عداد لتوليد معرف فريد لكل منتج
-    int id, quantity, height;
-    double price;
-    String name;
-    ProductNode left, right;
-    static final int MAX_CAPACITY = 1000;
+    public static final int MAX_CAPACITY = 1000;  // الحد الأقصى المسموح به للكمية
 
-    // المُنشئ مع التحقق من صحة السعر والكمية
-    ProductNode(String name, double price, int quantity) {
-        if (!isValidPrice(price) || !isValidQuantity(quantity)) {
-            throw new IllegalArgumentException("Price must be >= 0 and Quantity must be between 0 and " + MAX_CAPACITY);
-        }
-        this.id = ++product_num;  // توليد معرف فريد لكل منتج جديد
-        this.name = name;
-        this.price = price;
+    public static int productCounter = 0;
+    public int      id, height, quantity;
+    public String   name;
+    public double   price;
+    public ProductNode left, right;
+
+    public ProductNode(String name, double price, int quantity) {
+        if (price < 0)
+            throw new IllegalArgumentException("Price must be >= 0");
+        if (quantity < 0 || quantity > MAX_CAPACITY)
+            throw new IllegalArgumentException("Quantity must be between 0 and " + MAX_CAPACITY);
+
+        this.id       = ++productCounter;
+        this.name     = name;
+        this.price    = price;
         this.quantity = quantity;
-        this.height = 1;
+        this.height   = 1;
     }
+
 
     // التحقق من صحة السعر
     private boolean isValidPrice(double price) {

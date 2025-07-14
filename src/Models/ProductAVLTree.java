@@ -1,5 +1,9 @@
 class ProductAVLTree {
     private ProductNode root; // الجذر الرئيسي للشجرة
+    public boolean isEmpty() {
+        return root == null;
+    }
+
 
     // عملية الإدراج: تُنشئ منتجًا جديدًا وتُدرجه بالشجرة مع إعادة التوازن
     public void insert(String name, double price, int quantity) {
@@ -42,28 +46,26 @@ class ProductAVLTree {
     }
 
     // تحديث بيانات المنتج: السعر والكمية مع التحقق من القيود
-    public void updateProduct(int productId, Double newPrice, Integer newQuantity) {
-        ProductNode node = search(productId); // البحث عن المنتج
-
+    public void updateProduct(int productId, Double newPrice, Integer newQty) {
+        ProductNode node = search(productId);
         if (node == null) {
-            System.out.println("Product with ID " + productId + " not found.");
+            System.out.println("Product not found.");
             return;
         }
-
-        if (newPrice != null && newPrice >= 0) {
-            node.price = newPrice;
-        } else if (newPrice != null) {
-            System.out.println("Error: Price cannot be negative.");
+        if (newPrice != null) {
+            if (newPrice < 0) {
+                System.out.println("Error: Price must be >= 0.");
+            } else {
+                node.price = newPrice;
+            }
         }
-
-        if (newQuantity != null && newQuantity >= 0 && newQuantity <= ProductNode.MAX_CAPACITY) {
-            node.quantity = newQuantity;
-        } else if (newQuantity != null) {
-            System.out.println("Error: Quantity must be between 0 and " + ProductNode.MAX_CAPACITY);
+        if (newQty != null) {
+            if (newQty < 0 || newQty > ProductNode.MAX_CAPACITY) {
+                System.out.println("Error: Quantity must be between 0 and " + ProductNode.MAX_CAPACITY);
+            } else {
+                node.quantity = newQty;
+            }
         }
-
-        System.out.println("Product ID " + productId + " updated: Price = $" + node.price
-                + ", Quantity = " + node.quantity);
     }
 
     // حذف منتج من الشجرة باستخدام معرّف المنتج

@@ -1,52 +1,48 @@
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
-class ShipmentNode {
-    static int shipment_num = 0;  // عداد لتوليد معرف فريد لكل شحنة
-    int id, height;
-    String destination;
-    double cost;
-    LocalDate deliveryDate;
-    ShipmentNode left, right;
+public class ShipmentNode {
+    public static int shipmentCounter = 0;
+    public int id, height;
+    public String destination;
+    public double cost;
+    public LocalDate creationDate, deliveryDate;
+    public ShipmentNode left, right;
+    public List<OrderNode> orders = new ArrayList<>();
 
-    // المُنشئ: يتحقق من صحة التكلفة وصحة تاريخ التسليم (يجب أن يكون مستقبليًا)
-    ShipmentNode(String destination, double cost, String deliveryDate) {
-        if (!isValidCost(cost) || !isValidDeliveryDate(deliveryDate)) {
-            throw new IllegalArgumentException("Invalid cost or delivery date. " +
-                    "Delivery date must be in the future and cost >= 0.");
-        }
-        this.id = ++shipment_num;  // توليد معرف فريد لكل شحنة جديدة
+    public ShipmentNode(String destination, List<OrderNode> orders) {
+        this.id = ++shipmentCounter;
+        this.creationDate = LocalDate.now();
         this.destination = destination;
-        this.cost = cost;
-        this.deliveryDate = LocalDate.parse(deliveryDate);
+        this.orders.addAll(orders);
+
+        // 1) تحسب التكلفة
+        this.cost = orders.stream()
+                .mapToDouble(OrderNode::calculateOrderCost)
+                .sum();
+
+        // 2) تحدد موعد التوصيل
+        boolean hasUrgent = orders.stream()
+                .anyMatch(o -> o.priority == Priority.URGENT);
+        boolean hasVip    = orders.stream()
+                .anyMatch(o -> o.priority == Priority.VIP);
+
+        if (hasUrgent) {
+            deliveryDate = creationDate.plusWeeks(1);
+        } else if (hasVip) {
+            deliveryDate = creationDate.plusWeeks(2);
+        } else {
+            deliveryDate = creationDate.plusMonths(1);
+        }
+
         this.height = 1;
     }
 
-    // التحقق من صحة التكلفة (يجب أن تكون غير سالبة)
-    private boolean isValidCost(double cost) {
-        return cost >= 0;
-    }
-
-    // التحقق من صحة تاريخ التسليم (يجب أن يكون مستقبليًا)
-    private boolean isValidDeliveryDate(String date) {
-        LocalDate delivery = LocalDate.parse(date);
-        return delivery.isAfter(LocalDate.now());
-    }
-
-    public int getHeight() {
-        return height;
-    }
-
-    public void setHeight(int height) {
-        this.height = height;
-    }
-
-    // حساب عامل التوازن لشجرة AVL: الفرق بين ارتفاع الفرع الأيسر واليمين
+    public int getHeight() { return height; }
+    public void setHeight(int h) { height = h; }
     public int getBalance() {
-        return safeGetHeight(left) - safeGetHeight(right);
+        return safeHeight(left) - safeHeight(right);
     }
-
-    // دالة مساعدة لإرجاع ارتفاع العقدة بأمان
-    private int safeGetHeight(ShipmentNode node) {
-        return (node == null) ? 0 : node.getHeight();
-    }
+    private int safeHeight(ShipmentNode n) { return (n == null)?0:n.height; }
 }
